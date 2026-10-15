@@ -23,7 +23,7 @@ write_entries(output)
 shutil.copytree(ROOT/"docs",output/"使用说明")
 for name in ("LICENSE","NOTICE-THIRD-PARTY.md"):
     shutil.copy2(ROOT/name,output/"使用说明"/name)
-archive=output.parent/"QQ-AI-Bot-Windows-体验修复补丁.zip"
+archive=output.parent/"QQ-AI-Bot-Windows-Launcher-Patch.zip"
 with zipfile.ZipFile(archive,"w",zipfile.ZIP_DEFLATED) as z:
     for f in sorted(output.rglob("*")):
         if f.is_file(): z.write(f,str(f.relative_to(output)))
