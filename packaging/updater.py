@@ -36,7 +36,10 @@ ALLOWED={
 }
 
 
-class UpdateError(Exception):pass
+class UpdateError(Exception):
+    def __init__(self,message,code=None):
+        super().__init__(message)
+        self.code=code
 
 
 def digest(content):return hashlib.sha256(content).hexdigest()
@@ -66,19 +69,31 @@ def download(url,limit,expected=None):
                 if not block:break
                 content.extend(block)
                 if len(content)>limit:raise UpdateError("下载内容超过大小限制。")
-    except urllib.error.HTTPError as e:raise UpdateError(f"GitHub 下载失败（HTTP {e.code}）；未修改程序。请稍后重试。") from None
-    except (OSError,urllib.error.URLError,TimeoutError,http.client.HTTPException):raise UpdateError("网络连接失败、超时或下载中断；未修改程序。请检查网络后重试。") from None
+    except urllib.error.HTTPError as e:raise UpdateError(f"GitHub 下载失败（HTTP {e.code}）；未修改程序。请稍后重试。",code=e.code) from None
+    except (OSError,urllib.error.URLError,TimeoutError,http.client.HTTPException):raise UpdateError("网络连接失败、超时或下载中断；未修改程序。请检查网络后重试。",code="network") from None
     if expected and digest(content)!=expected:raise UpdateError("SHA256 完整性校验失败；未停止机器人或修改程序。")
     return bytes(content)
 
 
 def get_release(fetch=download):
+    source=f"https://github.com/{REPO}/releases/download/{CHANNEL}/"
+    try:raw=fetch(API,1_000_000)
+    except UpdateError as error:
+        if error.code not in (403,429,500,502,503,504,"network"):raise
+        # GitHub's shared anonymous API quota can be exhausted even for a
+        # public release. Its stable asset URL remains anonymously accessible.
+        # The manifest is authenticated by normal HTTPS to our exact repo;
+        # ZIP SHA256, size, version and every file hash remain mandatory.
+        print("GitHub 公共 API 暂不可用；改用同一公开 Release 的 HTTPS 清单，保留全部文件完整性校验。")
+        try:manifest=json.loads(fetch(source+METADATA,1_000_000))
+        except (ValueError,UnicodeError):raise UpdateError("公开候选清单无法解析；未修改程序。") from None
+        validate_manifest(manifest)
+        return manifest,source+ASSET
     try:
-        release=json.loads(fetch(API,1_000_000))
+        release=json.loads(raw)
         if release.get("draft") or not release.get("prerelease") or release.get("tag_name")!=CHANNEL:raise ValueError()
         assets={x["name"]:x for x in release["assets"]}
         meta=assets[METADATA]
-        source=f"https://github.com/{REPO}/releases/download/{CHANNEL}/"
         if meta["browser_download_url"]!=source+METADATA:raise ValueError()
         checksum=meta.get("digest","")
         if not re.fullmatch(r"sha256:[0-9a-f]{64}",checksum):raise ValueError()

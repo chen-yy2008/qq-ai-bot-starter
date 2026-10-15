@@ -116,6 +116,20 @@ class UpdateTests(unittest.TestCase):
         for url in ("http://github.com/file","https://github.com.evil.test/file","https://name:pass@github.com/file","https://github.com:444/file"):
             self.assertFalse(u.trusted_url(url))
 
+    def test_anonymous_api_limit_fallback_still_verifies_source_and_files(self):
+        seen=[]
+        prefix=f"https://github.com/{u.REPO}/releases/download/{u.CHANNEL}/"
+        def fetch(url,limit,expected=None):
+            seen.append(url)
+            if url==u.API:raise u.UpdateError("fixture public quota",code=403)
+            self.assertEqual(url,prefix+u.METADATA)
+            return json.dumps(self.manifest).encode()
+        manifest,url=u.get_release(fetch)
+        self.assertEqual(url,prefix+u.ASSET)
+        self.assertEqual(u.unpack(self.archive,manifest),self.payload)
+        with self.assertRaises(u.UpdateError):u.unpack(self.archive[:-1],manifest)
+        self.assertEqual(seen,[u.API,prefix+u.METADATA])
+
     def test_cannot_restore_is_explicit_and_stops_further_work(self):
         atomic=u.atomic_write
         old_plugin=self.root/"data/plugins/astrbot_plugin_qq_ai_lab/main.py"

@@ -32,7 +32,7 @@ def build(output):
     with zipfile.ZipFile(memory,"w",zipfile.ZIP_DEFLATED) as z:
         for (target,name),content in sorted(payload.items()):z.writestr(f"payload/{target}/{name}",content)
     archive=memory.getvalue()
-    manifest={"schema":1,"framework":"4.29.0","version":"1.0.0-rc.1","release_tag":CHANNEL,"sequence":1,"package":{"name":ASSET,"size":len(archive),"sha256":hashlib.sha256(archive).hexdigest()},"changes":["修复群消息处理器对 AstrBot 原生和其他插件命令的全局拦截","初始化身份无需模型；插件使用普通文本回复，避免依赖 QQ 原生 Markdown 权限","保留群白名单、授权、预算、冷却、退出记忆和默认关闭的主动模式","新增本机安全诊断，以及下载校验、程序备份、失败恢复的一键更新","仅更新列出的自有程序和说明，保留凭据、群设置、人格和数据库"],"files":[{"target":t,"path":n,"sha256":hashlib.sha256(c).hexdigest()} for (t,n),c in sorted(payload.items())]}
+    manifest={"schema":1,"framework":"4.29.0","version":"1.0.0-rc.1","release_tag":CHANNEL,"sequence":2,"package":{"name":ASSET,"size":len(archive),"sha256":hashlib.sha256(archive).hexdigest()},"changes":["修复群消息处理器对 AstrBot 原生和其他插件命令的全局拦截","初始化身份无需模型；插件使用普通文本回复，避免依赖 QQ 原生 Markdown 权限","保留群白名单、授权、预算、冷却、退出记忆和默认关闭的主动模式","新增本机安全诊断，以及下载校验、程序备份、失败恢复的一键更新","GitHub 匿名 API 限流时改走同一公开 Release HTTPS 清单，仍强制 ZIP 和逐文件校验","仅更新列出的自有程序和说明，保留凭据、群设置、人格和数据库"],"files":[{"target":t,"path":n,"sha256":hashlib.sha256(c).hexdigest()} for (t,n),c in sorted(payload.items())]}
     (output/ASSET).write_bytes(archive)
     (output/METADATA).write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding="utf-8")
     print(ASSET,len(archive),"bytes",manifest["package"]["sha256"])
