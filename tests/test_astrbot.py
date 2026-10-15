@@ -67,7 +67,13 @@ class AstrBotTests(unittest.IsolatedAsyncioTestCase):
         return event
 
     async def collect(self,event):
-        return [x async for x in self.plugin.on_group(event)]
+        results=[]
+        async def send(chain):
+            results.append(chain)
+            event._has_send_oper=True
+        with patch.object(event,"send",send):
+            await self.plugin.on_group(event)
+        return results
 
     async def test_native_event_permission_and_no_default_agent(self):
         denied=await self.collect(self.event("/启用群聊 已告知群友"))
@@ -78,7 +84,7 @@ class AstrBotTests(unittest.IsolatedAsyncioTestCase):
         results=await self.collect(e)
         self.assertTrue(results)
         self.assertTrue(e.is_stopped())
-        self.assertFalse(e.call_llm)
+        self.assertTrue(e.call_llm)  # v4.29.0: True prohibits the default agent
         self.assertEqual(len(self.requests),1)
         body=self.requests[0]
         self.assertEqual(body["max_tokens"],256)

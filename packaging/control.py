@@ -13,16 +13,16 @@ from bundle_paths import locations
 from panel_password import BundleLock,Cancelled,PasswordError,atomic_write,ensure_password,notify,panel_details,read_config
 
 
-def stop(root,app):
+def stop(root,app,quiet=False):
     record=Path(root)/"data/robot-process.json"
     try: instance=json.loads(record.read_text(encoding="utf-8"))
     except (OSError,ValueError):
         raise PasswordError("未找到由本启动器管理的运行实例。旧版启动窗口请按 Ctrl+C 关闭。") from None
     atomic_write(Path(root)/"data/stop-request.json",json.dumps({"instance":instance["instance"]}).encode())
     address,_=panel_details(read_config(root)[0])
-    for _ in range(40):
+    for _ in range(100):
         if not record.exists():
-            notify(app,"机器人已停止。现在可以重置管理密码或重新启动。")
+            if not quiet:notify(app,"机器人已停止。现在可以重置管理密码或重新启动。")
             return
         try:
             with urllib.request.urlopen(address,timeout=0.4): pass

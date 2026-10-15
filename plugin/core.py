@@ -121,7 +121,7 @@ class Store:
 
 
 class Engine:
-    def __init__(self, store: Store, personas: dict, catalog: dict, generate: Callable[..., Awaitable[Completion]], config=None, clock=time.time, rng=random.random):
+    def __init__(self, store: Store, personas: dict, catalog: dict, generate: Callable[..., Awaitable[Completion]], config=None, clock=time.time, rng=random.random, observe=None):
         self.store, self.personas, self.catalog, self.generate = store, personas, catalog, generate
         self.config = dict(cooldown=20, daily_calls=60, daily_tokens=60000, global_daily_calls=200, global_daily_tokens=200000, daily_proactive=8, concurrency=2, timeout=25, max_output=256, quiet_start=0, quiet_end=8, token_price=100.0, daily_cost=6.0)
         self.config.update(config or {})
@@ -135,6 +135,7 @@ class Engine:
             if not isinstance(self.config[key],(int,float)) or not 0<self.config[key]<1e9:
                 raise ValueError("Invalid price limit")
         self.clock, self.rng = clock, rng
+        self.observe=observe or (lambda *args,**kwargs:None)
         self.runtimes: dict[str, Runtime] = {}
         self.semaphore = asyncio.Semaphore(max(1, min(4, int(self.config["concurrency"]))))
 
@@ -277,6 +278,7 @@ class Engine:
         elif not explicit and text.startswith("/"):
             return None
         if r.busy or self.semaphore.locked() or now<r.retry_at or now-r.last_call<self.config["cooldown"]:
+            self.observe("model.skipped.cooldown")
             return "稍等一下：冷却中、服务繁忙或网络退避中。" if explicit else None
         persona=self.personas[s["persona"]]
         system=BOUNDARY+"\n"+persona["system_prompt"][:6000]
@@ -309,6 +311,7 @@ class Engine:
         for group,call_cap,token_cap in [(m.group,self.config["daily_calls"],self.config["daily_tokens"]),("*",self.config["global_daily_calls"],self.config["global_daily_tokens"])]:
             calls,tokens,_,pro=self.store.use(day,group)
             if calls>=call_cap or tokens+reserve>token_cap or (group==m.group and ((tokens+reserve)*self.config["token_price"]/1e6>self.config["daily_cost"] or (proactive and pro>=self.config["daily_proactive"]))):
+                self.observe("model.skipped.budget")
                 return "今日请求、Token 或估算费用预算已到上限。" if explicit else None
         for group in (m.group,"*"):
             self.store.add_usage(day,group,1,reserve,reserve,int(proactive))
@@ -318,8 +321,10 @@ class Engine:
         r.busy=True
         epoch=r.epoch
         try:
+            self.observe("model.begin")
             async with self.semaphore:
                 result=await asyncio.wait_for(self.generate(system,prompt,image,self.config["max_output"]),self.config["timeout"])
+            self.observe("model.completed")
             actual=result.tokens
             if actual is not None and isinstance(actual,int) and actual>=0:
                 for group in (m.group,"*"):
@@ -330,6 +335,7 @@ class Engine:
             output=plain(result.text,max(20,min(400,int(persona["max_chars"]))))
             return None if proactive and ("[沉默]" in output or not output) else output or "模型未返回文本。"
         except Exception as error:
+            self.observe("model.failed",error=error)
             r.failures=min(r.failures+1,6)
             r.retry_at=now+min(300,5*2**r.failures)
             if proactive or epoch!=r.epoch:

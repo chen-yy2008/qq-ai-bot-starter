@@ -15,25 +15,14 @@ import _thread
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from bundle_paths import locations
 from panel_password import BundleLock,Cancelled,PasswordError,atomic_write,check_stopped,ensure_password,notify,panel_details,sanitize_environment
+import safe_diagnostics
+sys.modules["qqbot_safe_diagnostics"]=safe_diagnostics
 
 ROOT,APP=locations(__file__)
 
 
 def install_private_logging():
-    factory=logging.getLogRecordFactory()
-    def private_factory(*args,**kwargs):
-        record=factory(*args,**kwargs)
-        record.msg="框架事件（隐私模式已隐藏内容）"
-        record.args=()
-        record.exc_info=record.exc_text=record.stack_info=None
-        record.pathname=record.filename="framework"
-        return record
-    logging.setLogRecordFactory(private_factory)
-    from loguru import logger
-    def patch(record):
-        record["message"]="框架事件（隐私模式已隐藏内容）"
-        record["exception"]=None
-    logger.configure(patcher=patch)
+    safe_diagnostics.install_private_logging()
 
 
 def main():
@@ -57,6 +46,7 @@ def run_locked():
     framework=APP/"framework"
     sys.path.insert(0,str(framework))
     install_private_logging()
+    safe_diagnostics.install(ROOT)
     def open_browser():
         for _ in range(90):
             try:
@@ -80,7 +70,7 @@ def run_locked():
                     return
             except (OSError,ValueError): pass
     threading.Thread(target=watch_stop,daemon=True).start()
-    print(f"正在启动 AstrBot。面板地址：{address}\n登录用户名：{username}；请使用你刚设置的管理密码，并保存好密码。\n默认日志隐藏消息和异常内容。停止：双击 停止机器人.bat 或在此窗口按 Ctrl+C。请勿分享 data 文件夹。")
+    print(f"正在启动 AstrBot。面板地址：{address}\n登录用户名：{username}；请使用你刚设置的管理密码，并保存好密码。\n日志仅显示安全阶段和错误类别；排查请双击 安全诊断.bat。停止：双击 停止机器人.bat 或在此窗口按 Ctrl+C。请勿分享 data 文件夹。")
     sys.argv=[str(framework/"main.py"),"--webui-dir",str(framework/"dashboard"/"dist")]
     try: runpy.run_path(str(framework/"main.py"),run_name="__main__")
     except KeyboardInterrupt: print("机器人已停止。")

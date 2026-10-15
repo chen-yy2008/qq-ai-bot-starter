@@ -29,4 +29,6 @@ with zipfile.ZipFile(args.archive) as z:
     required=("程序文件/runtime/python.exe","程序文件/framework/main.py","程序文件/framework/LICENSE","程序文件/framework/dashboard/dist/index.html","程序文件/panel_password.py","程序文件/password_dialog.ps1","data/plugins/astrbot_plugin_qq_ai_lab/main.py","程序文件/packaging/requirements-win.lock","启动机器人.bat","自检.bat","打开管理面板.bat","停止机器人.bat","重置管理密码.bat","首次使用.html","程序文件/tools/licenses/LICENSE-MIT")
     for path in required:
         if path not in files: raise SystemExit("Missing required file: "+path)
+    for path in ("检查并更新.bat","安全诊断.bat","程序文件/updater.py","程序文件/safe_diagnostics.py","data/plugins/astrbot_plugin_qq_ai_lab/diagnostics.py"):
+        if path not in files:raise SystemExit("Missing required candidate component: "+path)
     print("Verified",len(files),"files; manifest, required components, no runtime data or credential patterns.")

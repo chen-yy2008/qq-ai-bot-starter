@@ -3,7 +3,7 @@
     "description": "允许使用插件的 QQ 群 ID 列表",
     "type": "list",
     "default": [],
-    "hint": "在 QQ 群由 AstrBot 管理员发送 /状态 查看。添加后仍需 /启用群聊 已告知群友。"
+    "hint": "在 QQ 群发送 /身份（无需模型或预先授权）获取真实群 ID。添加后仍需管理员发送 /启用群聊 已告知群友。"
   },
   "ignored_bot_ids": {
     "description": "其他机器人发送者 ID（防循环）",
