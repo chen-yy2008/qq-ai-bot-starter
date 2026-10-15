@@ -4,13 +4,15 @@ import json
 from pathlib import Path
 import socket
 import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from bundle_paths import locations
 
-root=Path(__file__).resolve().parent
+root,app=locations(__file__)
 print("QQ AI Bot self-check; private local data will not be printed.")
 print("PYTHON:",sys.version.split()[0],"X64:",sys.maxsize>2**32)
 for module in ("aiohttp","openai","quart","botpy","sqlalchemy","PIL","faiss"):
     print("DEPENDENCY",module,"OK" if importlib.util.find_spec(module) else "MISSING")
-print("DASHBOARD:","OK" if (root/"framework/dashboard/dist/index.html").exists() else "MISSING")
+print("DASHBOARD:","OK" if (app/"framework/dashboard/dist/index.html").exists() else "MISSING")
 print("PLUGIN:","OK" if (root/"data/plugins/astrbot_plugin_qq_ai_lab/main.py").exists() else "MISSING")
 conf=root/"data/cmd_config.json"
 if conf.exists():
