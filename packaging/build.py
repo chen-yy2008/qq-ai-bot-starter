@@ -41,6 +41,8 @@ def main():
     shutil.copytree(ROOT/"docs",stage/"使用说明",ignore=shutil.ignore_patterns("__pycache__","*.pyc"))
     for name in ("README.md","LICENSE","NOTICE-THIRD-PARTY.md"):
         shutil.copy2(ROOT/name,stage/"使用说明"/name)
+    readme=stage/"使用说明/README.md"
+    readme.write_text(readme.read_text(encoding="utf-8").replace("(docs/","("),encoding="utf-8")
     for name in ("personas","config","plugin","tests","packaging"):
         src=ROOT/name
         shutil.copytree(src,app/name,ignore=shutil.ignore_patterns("__pycache__","*.pyc"))

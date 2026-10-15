@@ -29,7 +29,7 @@ def verify_hash(value,candidate):
 class PasswordTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()
-        self.root=Path(self.temp.name)
+        self.root=Path(self.temp.name).resolve()
         (self.root/"data").mkdir()
         self.path=self.root/"data/cmd_config.json"
         self.conf={"dashboard":{"username":"custom-owner","host":"127.0.0.1","port":6185,"password":"old-hash","pbkdf2_password":"","password_change_required":True,"jwt_secret":"old-jwt","totp":{"enable":True,"secret":"test-totp-retained"},"auth_rate_limit":{"enable":True}},"platform":[{"type":"qq_official","secret":"fixture-qq-retained"}],"provider":[{"key":["fixture-provider-retained"]}],"unknown_field":{"preserve":True}}
