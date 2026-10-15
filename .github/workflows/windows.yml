@@ -1,0 +1,47 @@
+name: Windows candidate verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      UV_CACHE_DIR: ${{ github.workspace }}\build-deps\cache
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.10'
+      - name: Download and verify pinned official artifacts
+        run: python packaging/prepare_artifacts.py --deps build-deps
+      - name: Prepare fixed upstream sources and installer
+        run: |
+          python -m zipfile -e build-deps/astrbot-v4.29.0.zip build-deps
+          python -m zipfile -e build-deps/uv.zip build-deps/uv
+          build-deps/uv/uv.exe venv .venv --python python
+          build-deps/uv/uv.exe pip sync packaging/requirements-win.lock --python .venv/Scripts/python.exe --require-hashes --build-constraints packaging/build-constraints.txt --quiet
+      - name: Core and actual AstrBot integration tests (offline fixtures)
+        run: |
+          $env:ASTRBOT_SOURCE=(Resolve-Path 'build-deps/AstrBot-4.29.0').Path
+          .venv/Scripts/python.exe -m unittest discover -s tests -v
+      - name: Build credential-free Windows package
+        run: python packaging/build.py --deps build-deps
+      - name: Fresh embedded-runtime installation and native login smoke test
+        run: python packaging/smoke_windows.py --package dist/QQ-AI-Bot-v1.0.0-Windows-x64
+      - name: Check distributable integrity and secrets
+        run: python packaging/verify.py --archive dist/QQ-AI-Bot-v1.0.0-Windows-x64.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Windows-offline-candidate-not-real-QQ-verified
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error

@@ -1,0 +1,39 @@
+{
+  "astrbot_version": "v4.29.0",
+  "astrbot_commit": "db4ce0c4b0ae94f443c641f0f78cc9228ddabbeb",
+  "python": "3.12.10",
+  "uv": "0.9.5",
+  "platform": "windows-x86_64",
+  "artifacts": [
+    {
+      "file": "astrbot-v4.29.0.zip",
+      "url": "https://codeload.github.com/AstrBotDevs/AstrBot/zip/refs/tags/v4.29.0",
+      "sha256": "8fc0f385366db906df963127aabae69acb53635475e2af34a3e95676c207e280"
+    },
+    {
+      "file": "AstrBot-v4.29.0-dashboard.zip",
+      "url": "https://github.com/AstrBotDevs/AstrBot/releases/download/v4.29.0/AstrBot-v4.29.0-dashboard.zip",
+      "sha256": "25e1b64d4d5effc404fdf92b70b753874283a7355dca766fc7b32ae7de5699ad"
+    },
+    {
+      "file": "python-3.12.10-embed-amd64.zip",
+      "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip",
+      "sha256": "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3"
+    },
+    {
+      "file": "uv.zip",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.9.5/uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "515dc53d7553f1357d0abc1f70acd921fbb9e30230b1d9a08737236daa6ee920"
+    },
+    {
+      "file": "uv-licenses/LICENSE-MIT",
+      "url": "https://raw.githubusercontent.com/astral-sh/uv/0.9.5/LICENSE-MIT",
+      "sha256": "860e3d7a86b84e6a7012c7a635fc64df475cebc6cce34dfeb73a5982ec58176c"
+    },
+    {
+      "file": "uv-licenses/LICENSE-APACHE",
+      "url": "https://raw.githubusercontent.com/astral-sh/uv/0.9.5/LICENSE-APACHE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    }
+  ]
+}

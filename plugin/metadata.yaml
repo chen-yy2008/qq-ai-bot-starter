@@ -1,0 +1,7 @@
+name: qq_ai_lab
+display_name: QQ 毒舌群友
+desc: 官方 QQ 群聊实验：四人格、主动接话、受控记忆与预算保护
+version: v1.0.0
+author: chen-yy2008
+repo: https://github.com/chen-yy2008/qq-ai-bot-starter
+astrbot_version: '>=4.29.0,<4.30.0'

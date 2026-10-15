@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+data/
+runtime/
+dist/
+.env*
+!.env.example
+*.db*
+*.log
+.build/
+*.zip
+*.key
+config/local*

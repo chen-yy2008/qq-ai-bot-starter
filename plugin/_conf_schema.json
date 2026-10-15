@@ -1,0 +1,79 @@
+{
+  "allowed_groups": {
+    "description": "允许使用插件的 QQ 群 ID 列表",
+    "type": "list",
+    "default": [],
+    "hint": "在 QQ 群由 AstrBot 管理员发送 /状态 查看。添加后仍需 /启用群聊 已告知群友。"
+  },
+  "ignored_bot_ids": {
+    "description": "其他机器人发送者 ID（防循环）",
+    "type": "list",
+    "default": []
+  },
+  "provider_id": {
+    "description": "已配置的 DeepSeek 模型提供者 ID",
+    "type": "string",
+    "default": "",
+    "hint": "在 AstrBot 模型页面创建官方 DeepSeek OpenAI 兼容模型，填其 ID；Key 只填在原生 WebUI。"
+  },
+  "cooldown": {
+    "description": "每群明确触发冷却秒数",
+    "type": "int",
+    "default": 20
+  },
+  "daily_calls": {
+    "description": "每群每日请求上限",
+    "type": "int",
+    "default": 60
+  },
+  "daily_tokens": {
+    "description": "每群每日 Token 上限（含失败预留）",
+    "type": "int",
+    "default": 60000
+  },
+  "global_daily_calls": {
+    "description": "全局每日请求上限",
+    "type": "int",
+    "default": 200
+  },
+  "global_daily_tokens": {
+    "description": "全局每日 Token 上限",
+    "type": "int",
+    "default": 200000
+  },
+  "daily_proactive": {
+    "description": "每群每日主动候选上限",
+    "type": "int",
+    "default": 8
+  },
+  "concurrency": {
+    "description": "全局模型并发上限（1–4）",
+    "type": "int",
+    "default": 2
+  },
+  "timeout": {
+    "description": "整体请求超时秒数",
+    "type": "int",
+    "default": 25
+  },
+  "quiet_start": {
+    "description": "上海时间休息开始小时",
+    "type": "int",
+    "default": 0
+  },
+  "quiet_end": {
+    "description": "上海时间休息结束小时，相等时不设休息",
+    "type": "int",
+    "default": 8
+  },
+  "token_price": {
+    "description": "每百万 Token 保守估算单价（元，不是官方报价）",
+    "type": "float",
+    "default": 100.0
+  },
+  "daily_cost": {
+    "description": "每群每日估算费用上限（元，不是账单）",
+    "type": "float",
+    "default": 6.0
+  }
+}

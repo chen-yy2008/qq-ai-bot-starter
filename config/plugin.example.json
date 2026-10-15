@@ -1,0 +1,17 @@
+{
+  "allowed_groups": [],
+  "ignored_bot_ids": [],
+  "provider_id": "",
+  "cooldown": 20,
+  "daily_calls": 60,
+  "daily_tokens": 60000,
+  "global_daily_calls": 200,
+  "global_daily_tokens": 200000,
+  "daily_proactive": 8,
+  "concurrency": 2,
+  "timeout": 25,
+  "quiet_start": 0,
+  "quiet_end": 8,
+  "token_price": 100.0,
+  "daily_cost": 6.0
+}
