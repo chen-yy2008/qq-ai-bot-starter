@@ -33,7 +33,7 @@ def main():
     output=args.output.resolve()
     if not output.is_relative_to((ROOT/"dist").resolve()): raise ValueError("Output must stay within project dist")
     output.mkdir(exist_ok=True,parents=True)
-    stage=output/"QQ-AI-Bot-v1.0.0-rc.1-Windows-x64"
+    stage=output/"QQ-AI-Bot-v1.0.0-Windows-x64"
     if stage.exists(): raise SystemExit("Build directory exists; use a fresh output directory after reviewing its contents.")
     stage.mkdir()
     app=stage/"程序文件"

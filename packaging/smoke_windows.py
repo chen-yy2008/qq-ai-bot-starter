@@ -11,10 +11,17 @@ import urllib.request
 
 p=argparse.ArgumentParser()
 p.add_argument("--package",type=Path,required=True)
+p.add_argument("--port",type=int,default=6185)
 args=p.parse_args()
 root=args.package.resolve()
 app=root/"程序文件"
 if (root/"data/cmd_config.json").exists(): raise SystemExit("Smoke test requires fresh extracted package data")
+if args.port!=6185:
+    from panel_password import BOOTSTRAP
+    fixture=json.loads(json.dumps(BOOTSTRAP))
+    fixture["dashboard"]["port"]=args.port
+    (root/"data").mkdir(exist_ok=True)
+    (root/"data/cmd_config.json").write_text(json.dumps(fixture),encoding="utf-8")
 driver=Path(__file__).resolve().parents[1]/"tests/windows_gui_driver.ps1"
 password="GuiOwnerA1"+secrets.token_urlsafe(20)
 new_password="ResetOwnerB2"+secrets.token_urlsafe(20)
@@ -41,7 +48,7 @@ def gui(process,password_value="",notice=False):
 def request(path,body=None,token=None):
     headers={"Content-Type":"application/json"}
     if token: headers["Authorization"]="Bearer "+token
-    req=urllib.request.Request("http://127.0.0.1:6185"+path,data=json.dumps(body).encode() if body else None,headers=headers)
+    req=urllib.request.Request(f"http://127.0.0.1:{args.port}"+path,data=json.dumps(body).encode() if body else None,headers=headers)
     with urllib.request.urlopen(req,timeout=10) as response: return response.status,response.read()
 
 
@@ -87,6 +94,13 @@ try:
     status,body=request("/api/plugin/get",token=old_token)
     if "qq_ai_lab" not in body.decode(): raise RuntimeError("PLUGIN_NOT_LOADED")
     print("PINNED_PLUGIN_LOADED",flush=True)
+    status,body=request("/api/v1/plugins/config/schema?plugin_id=qq_ai_lab",token=old_token)
+    metadata=json.loads(body)["data"]["metadata"]["qq_ai_lab"]["items"]["provider_id"]
+    if metadata.get("_special")!="select_provider" or "deepseek/deepseek-flash" not in metadata.get("hint",""):
+        raise RuntimeError("MODEL_INSTANCE_SELECTOR_SCHEMA_NOT_EXPOSED")
+    if not any(b'select_provider' in f.read_bytes() for f in (app/"framework/dashboard/dist/assets").glob("*.js")):
+        raise RuntimeError("PINNED_DASHBOARD_MODEL_SELECTOR_NOT_PRESENT")
+    print("NATIVE_MODEL_INSTANCE_SELECTOR_SCHEMA_AND_DASHBOARD_OK",flush=True)
     checks=subprocess.run([str(app/"runtime/python.exe"),"-I","-X","utf8",str(app/"doctor.py")],capture_output=True,text=True,encoding="utf-8")
     if "MISSING" in checks.stdout: raise RuntimeError("MISSING_COMPONENT")
     print("ALL_COMPONENTS_PRESENT",flush=True)

@@ -31,8 +31,13 @@ class PasswordTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory()
         self.root=Path(self.temp.name).resolve()
         (self.root/"data").mkdir()
+        with socket.socket() as free:
+            free.bind(("127.0.0.1",0));self.port=free.getsockname()[1]
+        bootstrap=patch.dict(password.BOOTSTRAP["dashboard"],port=self.port)
+        bootstrap.start();self.addCleanup(bootstrap.stop)
         self.path=self.root/"data/cmd_config.json"
         self.conf={"dashboard":{"username":"custom-owner","host":"127.0.0.1","port":6185,"password":"old-hash","pbkdf2_password":"","password_change_required":True,"jwt_secret":"old-jwt","totp":{"enable":True,"secret":"test-totp-retained"},"auth_rate_limit":{"enable":True}},"platform":[{"type":"qq_official","secret":"fixture-qq-retained"}],"provider":[{"key":["fixture-provider-retained"]}],"unknown_field":{"preserve":True}}
+        self.conf["dashboard"]["port"]=self.port
         self.original=json.dumps(self.conf,ensure_ascii=False,indent=3).encode()
         self.path.write_bytes(self.original)
         self.notices=[]
@@ -60,7 +65,7 @@ class PasswordTests(unittest.TestCase):
         self.assertNotEqual(updated["dashboard"]["jwt_secret"],"old-jwt")
         self.assertFalse(updated["dashboard"]["password_change_required"])
         self.assertIn("custom-owner",self.notices[-1][1])
-        self.assertIn("127.0.0.1:6185",self.notices[-1][1])
+        self.assertIn(f"127.0.0.1:{self.port}",self.notices[-1][1])
         for p in (self.path,self.root/"data/panel-password.initialized.json"):
             self.assertNotIn(FIXTURE.encode(),p.read_bytes())
 
@@ -163,6 +168,11 @@ class PasswordTests(unittest.TestCase):
             server.bind(("127.0.0.1",0)); server.listen()
             conf=copy.deepcopy(self.conf); conf["dashboard"]["port"]=server.getsockname()[1]
             with self.assertRaises(password.PasswordError): password.check_stopped(conf)
+
+    def test_configured_port_check_does_not_probe_another_installation_default(self):
+        with patch.object(password.socket,"socket") as socket_factory:
+            password.check_stopped(self.conf)
+        socket_factory.return_value.__enter__.return_value.bind.assert_called_once_with(("127.0.0.1",self.port))
 
     def test_top_level_entries_and_layout_compatibility(self):
         for name in ("启动机器人.bat","打开管理面板.bat","停止机器人.bat","重置管理密码.bat","首次使用.html"):

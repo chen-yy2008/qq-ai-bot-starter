@@ -58,7 +58,9 @@ def panel_details(conf):
 def check_stopped(conf):
     port=conf.get("dashboard",{}).get("port",6185)
     panel_details(conf)
-    for candidate in {port,6185}:
+    # Other independent installations may legitimately use the default port.
+    # This instance is protected by its own lifetime lock and configured port.
+    for candidate in (port,):
         with socket.socket() as check:
             try:
                 if hasattr(socket,"SO_EXCLUSIVEADDRUSE"):

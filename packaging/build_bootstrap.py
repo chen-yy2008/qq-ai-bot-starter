@@ -26,7 +26,7 @@ try {
     if (!(Test-Path -LiteralPath (Join-Path $appRoot 'runtime\\python.exe'))) { $appRoot=$installRoot }
     $python=Join-Path $appRoot 'runtime\\python.exe'
     if (!(Test-Path -LiteralPath $python) -or !(Test-Path -LiteralPath (Join-Path $appRoot 'framework\\main.py')) -or !(Test-Path -LiteralPath (Join-Path $installRoot 'data\\plugins\\astrbot_plugin_qq_ai_lab\\main.py'))) { throw 'INSTALL_NOT_FOUND' }
-    Write-Host '从项目公开候选 Release 下载已固定校验值的更新器。无需 GitHub 登录。'
+    Write-Host '从项目公开正式 Release 下载已固定校验值的更新器。无需 GitHub 登录。'
     $stage=Join-Path $installRoot 'data\\update-bootstrap\\@@SHORT@@'
     $probe=$stage
     while ($probe -and $probe -ne (Split-Path -Parent $installRoot)) {

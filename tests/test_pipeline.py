@@ -186,6 +186,16 @@ class PipelineTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("限流",str(self.sent))
         self.assertEqual(self.default_calls,0)
 
+    async def test_pipeline_bad_model_source_id_replies_with_instance_hint_without_api(self):
+        self.plugin.config["provider_id"]="deepseek"
+        self.plugin.context.get_provider_by_id=lambda _:None
+        await self.incoming("/启用群聊 已告知群友",group="group-fixture",sender="admin-fixture")
+        await self.incoming("/吐槽 fixture",group="group-fixture",at=True)
+        self.assertEqual(len(self.sent),2)
+        self.assertIn("deepseek/deepseek-flash",str(self.sent[-1]))
+        self.assertEqual(self.requests,[])
+        self.assertEqual(self.default_calls,0)
+
     async def test_pipeline_unlisted_plain_and_at_no_api_or_context(self):
         await self.incoming("fixture message")
         e=await self.incoming("fixture message",at=True)

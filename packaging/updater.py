@@ -23,7 +23,7 @@ from panel_password import BundleLock,PasswordError,atomic_write,check_stopped,p
 from control import stop as stop_robot
 
 REPO="chen-yy2008/qq-ai-bot-starter"
-CHANNEL="v1.0.0-rc.1"  # One public prerelease channel; never a draft/artifact URL.
+CHANNEL="v1.0.0"  # Fixed public stable release; never a draft/artifact URL.
 API=f"https://api.github.com/repos/{REPO}/releases/tags/{CHANNEL}"
 ASSET="QQ-AI-Bot-Update.zip"
 METADATA="QQ-AI-Bot-Update.json"
@@ -59,7 +59,7 @@ class Redirect(urllib.request.HTTPRedirectHandler):
 def download(url,limit,expected=None):
     """Bounded, timeout-protected, TLS-verified anonymous HTTPS, no retries/install."""
     if not trusted_url(url):raise UpdateError("更新来源不受信任。")
-    request=urllib.request.Request(url,headers={"User-Agent":"QQ-AI-Bot-Candidate-Updater/1","Accept":"application/vnd.github+json" if "api.github.com/" in url else "application/octet-stream"})
+    request=urllib.request.Request(url,headers={"User-Agent":"QQ-AI-Bot-Updater/1","Accept":"application/vnd.github+json" if "api.github.com/" in url else "application/octet-stream"})
     try:
         with urllib.request.build_opener(Redirect()).open(request,timeout=25) as response:
             if not trusted_url(response.geturl()):raise UpdateError("下载来源校验失败。")
@@ -86,12 +86,12 @@ def get_release(fetch=download):
         # ZIP SHA256, size, version and every file hash remain mandatory.
         print("GitHub 公共 API 暂不可用；改用同一公开 Release 的 HTTPS 清单，保留全部文件完整性校验。")
         try:manifest=json.loads(fetch(source+METADATA,1_000_000))
-        except (ValueError,UnicodeError):raise UpdateError("公开候选清单无法解析；未修改程序。") from None
+        except (ValueError,UnicodeError):raise UpdateError("公开更新清单无法解析；未修改程序。") from None
         validate_manifest(manifest)
         return manifest,source+ASSET
     try:
         release=json.loads(raw)
-        if release.get("draft") or not release.get("prerelease") or release.get("tag_name")!=CHANNEL:raise ValueError()
+        if release.get("draft") or release.get("prerelease") or release.get("tag_name")!=CHANNEL:raise ValueError()
         assets={x["name"]:x for x in release["assets"]}
         meta=assets[METADATA]
         if meta["browser_download_url"]!=source+METADATA:raise ValueError()
@@ -102,12 +102,12 @@ def get_release(fetch=download):
         archive=assets[ASSET]
         if archive["browser_download_url"]!=source+ASSET or archive["size"]!=manifest["package"]["size"] or archive.get("digest")!="sha256:"+manifest["package"]["sha256"]:raise ValueError()
         return manifest,archive["browser_download_url"]
-    except (KeyError,TypeError,ValueError,UnicodeError):raise UpdateError("公开候选更新元数据不完整或不匹配；未修改程序。") from None
+    except (KeyError,TypeError,ValueError,UnicodeError):raise UpdateError("公开更新元数据不完整或不匹配；未修改程序。") from None
 
 
 def validate_manifest(m):
     try:
-        if m["schema"]!=1 or m["framework"]!="4.29.0" or m["version"]!="1.0.0-rc.1" or m["release_tag"]!=CHANNEL or type(m["sequence"]) is not int or m["sequence"]<1:raise ValueError()
+        if m["schema"]!=1 or m["framework"]!="4.29.0" or m["version"]!="1.0.0" or m["release_tag"]!=CHANNEL or type(m["sequence"]) is not int or m["sequence"]<1:raise ValueError()
         p=m["package"]
         if p["name"]!=ASSET or not re.fullmatch(r"[0-9a-f]{64}",p["sha256"]) or type(p["size"]) is not int or not 0<p["size"]<=MAX_ZIP:raise ValueError()
         found=set()
@@ -287,12 +287,12 @@ def main():
     lock=BundleLock(root);lock.path=root/"data/update-control.lock"
     with lock:
         manifest,url=get_release()
-        print("可信来源：https://github.com/"+REPO+"\n候选更新："+manifest["version"]+"（公开 prerelease，尚未完成真实 QQ 验收）")
+        print("可信来源：https://github.com/"+REPO+"\n可用更新："+manifest["version"])
         for change in manifest["changes"]:print("- "+change)
         try:current=json.loads((root/"data/qqbot-update.json").read_text(encoding="utf-8"))
         except (OSError,ValueError):current={}
         if current.get("sequence",0)>=manifest["sequence"]:
-            print("当前已安装此候选更新。真实 QQ 验收结果仍由实际测试决定。")
+            print("当前已安装此更新。各项真人验证范围见使用说明中的验收报告。")
             return 0
         print("安装目录："+str(root)+"\n本次仅修改以下程序文件（不会覆盖配置、人格、记忆数据库或其他插件）：")
         for f in manifest["files"]:print("  "+str(destination(root,app,f).relative_to(root)))
@@ -308,7 +308,7 @@ def main():
         content=download(url,manifest["package"]["size"],manifest["package"]["sha256"])
         files=unpack(content,manifest)
         backup=apply_update(root,app,manifest,files)
-        print("候选更新成功，后台已就绪。备份："+str(backup)+"\n请在真实 QQ 群完成集中验收；此结果不代表 QQ 平台验收通过。")
+        print("更新成功，后台已就绪。备份："+str(backup)+"\n配置、人格和数据库已保留；此结果不代表所有 QQ 功能均已真人验证。")
         return 0
 
 

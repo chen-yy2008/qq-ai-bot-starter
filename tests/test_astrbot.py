@@ -23,6 +23,7 @@ if AVAILABLE:
     from astrbot.core.platform.message_type import MessageType
     from astrbot.api.message_components import Plain
     from plugin.main import QQLab
+    from plugin.core import ProviderConfigError, friendly_error
 
     class ActualEvent(AstrMessageEvent):
         async def send(self,chain): pass
@@ -105,6 +106,40 @@ class AstrBotTests(unittest.IsolatedAsyncioTestCase):
         try: await self.plugin.generate("system","prompt","",256)
         except Exception as e: response=e
         self.assertEqual(getattr(response,"status_code",None),429)
+        self.assertEqual(len(self.requests),1)
+
+    async def test_provider_source_is_not_a_model_instance_and_no_paid_call(self):
+        self.plugin.context.get_provider_by_id=lambda value: None if value=="deepseek" else SimpleNamespace(client=self.client,get_model=lambda:"deepseek-flash")
+        self.plugin.config["provider_id"]="deepseek"
+        with self.assertRaises(ProviderConfigError) as caught:
+            await self.plugin.generate("system","prompt","",256)
+        message=friendly_error(caught.exception)
+        self.assertIn("deepseek/deepseek-flash",message)
+        self.assertIn("无需因此重填 Key",message)
+        self.assertEqual(self.requests,[])
+        self.plugin.config["provider_id"]="deepseek/deepseek-flash"
+        await self.plugin.generate("system","prompt","",256)
+        self.assertEqual(len(self.requests),1)
+        self.assertEqual(self.requests[0]["model"],"deepseek-flash")
+
+    async def test_missing_provider_and_wrong_endpoint_are_distinct_local_errors(self):
+        self.plugin.config["provider_id"]=""
+        with self.assertRaises(ProviderConfigError) as caught:
+            await self.plugin.generate("system","prompt","",256)
+        self.assertIn("尚未选择模型",friendly_error(caught.exception))
+        self.plugin.config["provider_id"]="fixture"
+        self.plugin.context.get_provider_by_id=lambda _:SimpleNamespace(client=None)
+        with self.assertRaises(ProviderConfigError) as caught:
+            await self.plugin.generate("system","prompt","https://fixture.invalid/image",256)
+        self.assertIn("模型地址或类型",friendly_error(caught.exception))
+        self.assertEqual(self.requests,[])
+
+    async def test_actual_sdk_server_failure_has_service_hint_and_no_retry(self):
+        self.code=503
+        with self.assertRaises(Exception) as caught:
+            await self.plugin.generate("system","prompt","",256)
+        self.assertIn("服务端暂时故障",friendly_error(caught.exception))
+        self.assertIn("无需因此修改",friendly_error(caught.exception))
         self.assertEqual(len(self.requests),1)
 
     async def test_original_slash_after_framework_wake_prefix_stripping(self):

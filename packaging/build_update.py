@@ -1,4 +1,4 @@
-"""Build a small public candidate repair asset from explicit code/doc lists."""
+"""Build code-only updates, plus metadata readable by the existing RC updater."""
 import argparse
 import hashlib
 import io
@@ -32,9 +32,17 @@ def build(output):
     with zipfile.ZipFile(memory,"w",zipfile.ZIP_DEFLATED) as z:
         for (target,name),content in sorted(payload.items()):z.writestr(f"payload/{target}/{name}",content)
     archive=memory.getvalue()
-    manifest={"schema":1,"framework":"4.29.0","version":"1.0.0-rc.1","release_tag":CHANNEL,"sequence":2,"package":{"name":ASSET,"size":len(archive),"sha256":hashlib.sha256(archive).hexdigest()},"changes":["修复群消息处理器对 AstrBot 原生和其他插件命令的全局拦截","初始化身份无需模型；插件使用普通文本回复，避免依赖 QQ 原生 Markdown 权限","保留群白名单、授权、预算、冷却、退出记忆和默认关闭的主动模式","新增本机安全诊断，以及下载校验、程序备份、失败恢复的一键更新","GitHub 匿名 API 限流时改走同一公开 Release HTTPS 清单，仍强制 ZIP 和逐文件校验","仅更新列出的自有程序和说明，保留凭据、群设置、人格和数据库"],"files":[{"target":t,"path":n,"sha256":hashlib.sha256(c).hexdigest()} for (t,n),c in sorted(payload.items())]}
+    manifest={"schema":1,"framework":"4.29.0","version":"1.0.0","release_tag":CHANNEL,"sequence":4,"package":{"name":ASSET,"size":len(archive),"sha256":hashlib.sha256(archive).hexdigest()},"changes":["v1.0.0 收尾：保留已真人验证的群聊身份、授权和 AI 文字回复路径及原生命令兼容修复","模型提供者可选择实例；明确区分源 ID、实例 ID 和服务端临时故障","补充初始化、上下文与主动模式的可复制操作提示；微调中文短句提示词","保留安全诊断、校验备份、失败回滚；只更新列出的自有文件","保留凭据、管理员、允许群、人格与数据库；高级功能验收范围见报告"],"files":[{"target":t,"path":n,"sha256":hashlib.sha256(c).hexdigest()} for (t,n),c in sorted(payload.items())]}
     (output/ASSET).write_bytes(archive)
     (output/METADATA).write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding="utf-8")
+    # Publish these two assets on the existing RC channel only AFTER the
+    # stable release is approved and its anonymous downloads are verified.
+    # Old updaters require their original tag/version, but receive the exact
+    # same allowlisted stable payload; the installed updater then uses stable.
+    bridge=dict(manifest,version="1.0.0-rc.1",release_tag="v1.0.0-rc.1")
+    legacy=output/"rc-bridge";legacy.mkdir()
+    (legacy/ASSET).write_bytes(archive)
+    (legacy/METADATA).write_text(json.dumps(bridge,ensure_ascii=False,indent=2),encoding="utf-8")
     print(ASSET,len(archive),"bytes",manifest["package"]["sha256"])
 
 

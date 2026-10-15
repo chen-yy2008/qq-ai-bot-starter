@@ -11,10 +11,11 @@
     "default": []
   },
   "provider_id": {
-    "description": "已配置的 DeepSeek 模型提供者 ID",
+    "description": "DeepSeek 模型提供者实例（不是提供商源）",
     "type": "string",
+    "_special": "select_provider",
     "default": "",
-    "hint": "在 AstrBot 模型页面创建官方 DeepSeek OpenAI 兼容模型，填其 ID；Key 只填在原生 WebUI。"
+    "hint": "先在模型页面创建并启用官方 DeepSeek OpenAI 兼容模型，然后在此选择它。例如源 ID 为 deepseek、模型名为 deepseek-flash 时，实例 ID 是 deepseek/deepseek-flash，而不是 deepseek。API Base URL：https://api.deepseek.com/v1；Key 只填模型页面。模型名以账号实际可用列表为准。"
   },
   "cooldown": {
     "description": "每群明确触发冷却秒数",

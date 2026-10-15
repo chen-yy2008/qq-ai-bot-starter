@@ -9,7 +9,7 @@ from astrbot.api.message_components import Image, Plain
 from astrbot.api.star import Context, Star, register
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
-from .core import Completion, Engine, Message, Store
+from .core import Completion, Engine, Message, Store, ProviderConfigError
 from .images import prepare_image
 from .diagnostics import report
 
@@ -18,7 +18,7 @@ COMMANDS=frozenset("身份 帮助 状态 人格 退出记忆 恢复记忆 别吐
 ALIASES={"/毒舌身份":"/身份","/毒舌帮助":"/帮助","/毒舌状态":"/状态"}
 
 
-@register("qq_ai_lab", "chen-yy2008", "QQ 群聊四人格实验", "1.0.0-rc.1")
+@register("qq_ai_lab", "chen-yy2008", "QQ 群聊四人格实验", "1.0.0")
 class QQLab(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -44,9 +44,15 @@ class QQLab(Star):
         self.purge_task=asyncio.create_task(purge_loop())
 
     async def generate(self,system,prompt,image,max_output):
-        provider=self.context.get_provider_by_id(self.config.get("provider_id",""))
+        provider_id=self.config.get("provider_id","")
+        if not provider_id:
+            raise ProviderConfigError("missing")
+        provider=self.context.get_provider_by_id(provider_id)
         if not provider:
-            raise ValueError("provider not configured")
+            raise ProviderConfigError("not_found")
+        client=getattr(provider,"client",None)
+        if client is None or getattr(client.base_url,"host","")!="api.deepseek.com" or client.base_url.scheme!="https":
+            raise ProviderConfigError("endpoint")
         images=[]
         image_notice=""
         if image:
@@ -55,9 +61,6 @@ class QQLab(Star):
             except Exception:
                 prompt += "\n[图片读取失败；不要猜测图片内容，只依据文字回复。]"
                 image_notice="图片读取失败，已按文字处理。\n"
-        client=getattr(provider,"client",None)
-        if client is None or getattr(client.base_url,"host","")!="api.deepseek.com" or client.base_url.scheme!="https":
-            raise ValueError("Please select the official DeepSeek OpenAI-compatible provider")
         content=[{"type":"text","text":prompt}]
         for prepared in images:
             content.append({"type":"image_url","image_url":{"url":"data:image/jpeg;base64,"+prepared.removeprefix("base64://"),"detail":"low"}})

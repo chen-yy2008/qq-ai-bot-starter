@@ -52,6 +52,20 @@ class EngineTests(unittest.IsolatedAsyncioTestCase):
         for cmd in ("/人格 抽象串子","/主动 活跃","/记住 abc","/清空记忆","/图片 关闭","/闭嘴"):
             self.assertIn("管理员",await self.send(cmd))
 
+    async def test_proactive_wrong_notice_argument_has_copyable_steps_and_keeps_consent(self):
+        await self.enable()
+        reply=await self.send("/主动 活跃 已告知群友",admin=True)
+        self.assertIn("/上下文 开启 已告知群友",reply)
+        self.assertIn("再发送 /主动 活跃",reply)
+        state=self.store.state("qq:GroupMessage:g1")
+        self.assertEqual(state["mode"],"安静")
+        self.assertFalse(state["context"])
+        reply=await self.send("/主动 活跃",admin=True)
+        self.assertIn("上下文尚未开启",reply)
+        self.assertFalse(self.store.state("qq:GroupMessage:g1")["context"])
+        for n in range(6):await self.send("自然讨论",user="u"+str(n%2))
+        self.assertEqual(self.calls,[])
+
     async def test_explicit_commands_and_four_personas(self):
         await self.enable()
         for persona in self.personas:
