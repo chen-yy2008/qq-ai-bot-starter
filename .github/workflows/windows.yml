@@ -35,12 +35,8 @@ jobs:
       - name: Build credential-free Windows package
         run: |
           python packaging/build.py --deps build-deps
-          python packaging/build_update.py --output dist/update
-          python packaging/build_bootstrap.py --manifest dist/update/QQ-AI-Bot-Update.json
       - name: Root launchers, real password GUI, login, stop, reset and restart
         run: python packaging/smoke_windows.py --package dist/QQ-AI-Bot-v1.0.0-Windows-x64
-      - name: Real running-instance update, stop, restart and private-fixture retention
-        run: python packaging/smoke_update_windows.py --package dist/QQ-AI-Bot-v1.0.0-Windows-x64 --manifest dist/update/QQ-AI-Bot-Update.json --archive dist/update/QQ-AI-Bot-Update.zip
       - name: Check distributable integrity and secrets
         run: python packaging/verify.py --archive dist/QQ-AI-Bot-v1.0.0-Windows-x64.zip
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -49,6 +45,4 @@ jobs:
           path: |
             dist/*.zip
             dist/SHA256SUMS.txt
-            dist/update/QQ-AI-Bot-Update.*
-            dist/update/QQ-AI-Bot-Update-Start.bat
           if-no-files-found: error
